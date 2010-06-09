@@ -1,29 +1,56 @@
+#include <pthread.h>
+#include <sys/types.h>
 #include <fcgiapp.h>
+#include <memory>
 #include "util.h"
+#include "richiesta.h"
+using namespace std;
+
+void *thread_ricezione(void *arg)
+{
+	auto_ptr<Richiesta> preq = auto_ptr<Richiesta>((Richiesta*) arg);
+
+	sleep(10);
+
+	if (FCGX_FPrintF(preq->out(),
+		"Content-Type: text/xml; charset=\"utf-8\"\r\n"
+		"\r\n"
+		"<keepalive></keepalive>\r\n") == -1)
+		throw fcgi_error("FPrintF");
+
+	return 0;
+}
+
+
 
 int main()
 {
 	if (FCGX_Init() != 0)
 		throw fcgi_error("Init");
 
+	// TODO: crea il thread per l'invio dei messaggi
+
 	for (;;) {
-		FCGX_Request request;
-		if (FCGX_InitRequest(&request, 0, 0) != 0)
-			throw fcgi_error("InitRequest");
+		Richiesta *preq = new Richiesta();
+		preq->accetta_nuova();
 
-		if (FCGX_Accept_r(&request) != 0)
+		pthread_t newt;
+		switch (preq->tipo()) {
+		case Richiesta::INVIO:
+			// TODO: forwarda la richiesta al thread di invio messaggi
+			delete preq;
 			break;
-
-		if (FCGX_FPrintF(request.out,
-			"Content-Type: text/xml; charset=\"utf-8\"\r\n"
-			"\r\n"
-			"<keepalive></keepalive>\r\n") == -1)
-			throw fcgi_error("FPrintF");
-
-		FCGX_Finish_r(&request);
-		FCGX_Free(&request, 0);
-
-		sleep(10);
+		case Richiesta::RICEZIONE:
+			if (pthread_create(&newt, NULL, thread_ricezione, preq) != 0)
+				throw sys_error("pthread_create");
+			if (pthread_detach(newt) != 0)
+				throw sys_error("pthread_detach");
+			break;
+		default:
+			preq->rispondi_con_400();
+			delete preq;
+			break;
+		}
 	}
 	return 0;
 }
