@@ -1,6 +1,6 @@
 .POSIX:
 
-TARGET = jbchat
+TARGET = ../wwwroot/jbchat.fcgi
 CPPFILES = jbchat.cpp
 GLOBAL_HEADERS = 
 # Library dependencies: -pthread (or -lrt), -lm for math
@@ -20,15 +20,10 @@ all: $(TARGET)
 $(TARGET): $(CPPFILES) $(GLOBAL_HEADERS)
 	$(CXX) $(BUILD_FLAGS) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) $(DEPCFLAGS) $(DEPLIBS) $(CPPFILES) -o $@
 
-.PHONY: clean all install check
+.PHONY: clean all spawn 
 clean:
 	-rm -f $(TARGET)
 
-install: all
-	install -d $(DESTDIR)$(bindir)
-	install $(DESTDIR)$(bindir)/$(TARGET)
-
-check: all
-	./test.sh
-	@echo Test passed
+spawn: all
+	spawn-fcgi -a 127.0.0.1 -p 9000 -- $(TARGET)
 
