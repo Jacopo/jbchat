@@ -26,6 +26,9 @@ clean:
 	-rm -f $(TARGET)
 
 spawn: all
+	spawn-fcgi -a 127.0.0.1 -p 9000 -n -- $(TARGET)
+
+spawn-bg: all
 	spawn-fcgi -a 127.0.0.1 -p 9000 -- $(TARGET)
 
 spawn-debug: all
