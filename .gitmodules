@@ -1,0 +1,3 @@
+[submodule "fcgi-debug"]
+	path = fcgi-debug
+	url = git://stbuehler.de/fcgi-debug.git
