@@ -1,0 +1,20 @@
+server {
+
+	listen   80;
+	server_name  localhost;
+
+	access_log  /var/log/nginx/jbchat.access.log;
+
+	location / {
+		root   /var/www/jbchat;
+		index  index.html;
+	}
+
+	# Passa tutti gli URL qualcosa.fcgi a spawn-fcgi
+	location ~ \.fcgi$ {
+		fastcgi_pass   127.0.0.1:9000;
+		fastcgi_index  index.fcgi;
+		include fastcgi_params;
+	}
+}
+
