@@ -5,7 +5,7 @@ CPPFILES = jbchat.cpp richiesta.cpp
 GLOBAL_HEADERS = *.h
 # Library dependencies: -pthread (or -lrt), -lm for math
 DEPCFLAGS = -pthread
-DEPLIBS = -lm -lfcgi++
+DEPLIBS = -lm -lrt -lfcgi++
 FCGIDEBUG = ../fcgi-debug/build/fcgi-debug
 
 # Default values for user-overridable flags:
