@@ -1,14 +1,24 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <fcgiapp.h>
+#include <stdint.h>
 #include <memory>
 #include "util.h"
 #include "richiesta.h"
 using namespace std;
 
+
+#define BUFSIZE 8192
+
+
+static volatile int punto_inserimento = 0;
+//static uint8_t buffer[BUFSIZE];
+
+
 void *thread_ricezione(void *arg)
 {
 	auto_ptr<Richiesta> preq = auto_ptr<Richiesta>((Richiesta*) arg);
+	preq->da();
 
 	sleep(10);
 

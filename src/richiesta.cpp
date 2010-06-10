@@ -10,4 +10,7 @@ void Richiesta::parse_query()
 	FCGX_GetParam("QUERY_STRING", fcgi_request.envp);
 
 	m_tipo = RICEZIONE;
+	m_da = 0;
+
+	already_parsed = true;
 }

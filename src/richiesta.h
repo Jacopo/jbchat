@@ -8,7 +8,7 @@ class Richiesta {
 public:
 	enum TIPO_RICHIESTA { RICEZIONE, INVIO, IGNOTA };
 
-	explicit Richiesta() {
+	explicit Richiesta() : already_parsed(false) {
 		if (FCGX_InitRequest(&fcgi_request, 0, 0) != 0)
 			throw fcgi_error("InitRequest");
 	}
@@ -17,7 +17,8 @@ public:
 	FCGX_Stream* out() { return fcgi_request.out; }
 
 
-	TIPO_RICHIESTA tipo() { parse_query(); return m_tipo; }
+	TIPO_RICHIESTA tipo() { if (!already_parsed) parse_query(); return m_tipo; }
+	int da() { if (!already_parsed) parse_query(); return m_da; }
 
 
 	// Risposte predefinite
@@ -42,6 +43,9 @@ private:
 	FCGX_Request fcgi_request;
 
 	TIPO_RICHIESTA m_tipo;
+	int m_da;
+
+	bool already_parsed;
 
 	void parse_query();
 };
