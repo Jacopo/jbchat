@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <messaggi>
-<msg autore="Jules">So, tell me again about the hash bars?</msg>
-<msg autore="Vincent">Okay, what you wanna to know?</msg>
-<msg autore="Jules">Hash is legal there right?</msg>
+<msg numero="1" autore="Jules">So, tell me again about the hash bars?</msg>
+<msg numero="2" autore="Vincent">Okay, what you wanna to know?</msg>
+<msg numero="3" autore="Jules">Hash is legal there right?</msg>
 </messaggi>

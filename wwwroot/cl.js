@@ -1,5 +1,7 @@
-var invio_abilitato = true;
 var url_fcgi = 'jbchat.fcgi';
+
+var invio_abilitato = true;
+var ultimo_messaggio_ricevuto = 0;
 
 $(document).ready(function() {
 	// Reset iniziale
@@ -19,7 +21,7 @@ function richiedi_messaggi()
 	$.ajax({
 		type: 'GET',
 		url: url_fcgi,
-		data: { 'ricevi' : 'nuovi' },
+		data: { 'ricevi_da' : ultimo_messaggio_ricevuto },
 		success: arrivo_messaggi,
 		error: errore_ricezione,
 		dataType: 'xml',
@@ -34,8 +36,18 @@ function arrivo_messaggi(xml)
 			var testo = $(this).text();
 			var autore = $(this).attr('autore');
 
+			var numero = $(this).attr('numero');
+			var RE_num = /^\d+$/;
+			if (RE_num.test(numero) == false) {
+				mostra_stato("Errore ricezione numero messaggio", 0);
+				return;
+			}
+			if (numero > ultimo_messaggio_ricevuto)
+				ultimo_messaggio_ricevuto = numero;
+
 			// Nota: text(stringa) si occupa anche
 			//       dell'escaping
+			$('<li></li>').text(numero).appendTo("#msgs");
 			$('<li></li>').text(autore).appendTo("#msgs");
 			$('<li></li>').text(testo).appendTo("#msgs");
 		});
