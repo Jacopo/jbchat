@@ -17,8 +17,7 @@ public:
 	FCGX_Stream* out() { return fcgi_request.out; }
 
 
-	TIPO_RICHIESTA tipo() { /* TODO */ return RICEZIONE; }
-
+	TIPO_RICHIESTA tipo() { parse_query(); return m_tipo; }
 
 
 	// Risposte predefinite
@@ -41,7 +40,10 @@ public:
 
 private:
 	FCGX_Request fcgi_request;
+
+	TIPO_RICHIESTA m_tipo;
+
+	void parse_query();
 };
 
 #endif
-

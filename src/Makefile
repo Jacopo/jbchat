@@ -1,8 +1,8 @@
 .POSIX:
 
 TARGET = ../wwwroot/jbchat.fcgi
-CPPFILES = jbchat.cpp
-GLOBAL_HEADERS = 
+CPPFILES = jbchat.cpp richiesta.cpp
+GLOBAL_HEADERS = *.h
 # Library dependencies: -pthread (or -lrt), -lm for math
 DEPCFLAGS = -pthread
 DEPLIBS = -lm -lfcgi++
