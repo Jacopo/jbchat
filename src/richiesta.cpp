@@ -30,9 +30,8 @@ void Richiesta::parse_query()
             m_tipo=IGNOTA;
     };
 
-    FCGX_GetParam("QUERY_STRING", fcgi_request.envp);
-
-    m_da = 0;
+	if (m_da == 0)		/* I messaggi sono numerati a partire da 1 */
+		m_da = 1;
 
     already_parsed = true;
 }
