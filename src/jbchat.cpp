@@ -1,26 +1,33 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <cstdio>
 #include <sys/types.h>
 #include <time.h>
+
 #include <fcgiapp.h>
+
 #include <memory>
+
 #include "util.h"
 #include "richiesta.h"
 using namespace std;
 
 
-#define BUFSIZE 25000
+#define BUFSIZE 10000000
+#define MAX_INDICE 2000
 #define KEEPALIVE_TIMEOUT 120		// In secondi
 
 
-static int punto_inserimento = 0;
+static int prossimo_indice;
 static char buffer[BUFSIZE];
+static char* inizio[MAX_INDICE+10];
+
 static pthread_mutex_t mutex_inserimento = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t nuovi_messaggi = PTHREAD_COND_INITIALIZER;
 
 
-void *thread_ricezione(void *arg)
+static void *thread_ricezione(void *arg)
 {
 	auto_ptr<Richiesta> preq = auto_ptr<Richiesta>((Richiesta*) arg);
 
@@ -33,7 +40,7 @@ void *thread_ricezione(void *arg)
 
 	{
 		HoldingMutex ml(&mutex_inserimento);
-		while (preq->da() >= punto_inserimento)
+		while (preq->da() > prossimo_indice)
 			if (pthread_cond_timedwait(&nuovi_messaggi, &mutex_inserimento, &waketime) != 0) {
 				if (errno == ETIMEDOUT)
 					invia_keepalive = true;
@@ -45,21 +52,62 @@ void *thread_ricezione(void *arg)
 	if (invia_keepalive) {
 		// Timeout raggiunto, nessun messaggio nuovo da inviare:
 		// ci limitiamo a inviare un messaggio di keepalive
-		if (FCGX_FPrintF(preq->out(),
-						 "Content-Type: text/xml; charset=\"utf-8\"\r\n"
-						 "\r\n"
-						 "<keepalive></keepalive>\r\n") == -1)
-			throw fcgi_error("FPrintF");
+		char keepalive_msg[] = "Content-Type: text/xml; charset=\"utf-8\"\r\n\r\n<keepalive></keepalive>\r\n";
+		if (FCGX_PutS(keepalive_msg, preq->out()) == -1)
+			throw fcgi_error("PutS keepalive_msg");
 		return 0;
 	}
 
-	// Leggiamo i messaggi da inviare dal buffer
-	if (FCGX_PutStr(&buffer[preq->da()], punto_inserimento - preq->da(), preq->out()) != (punto_inserimento - preq->da()))
+
+	// Inviamo al client i messaggi nel range [preq->da(), prossimo_indice)
+
+	// 1) Header
+	char xml_header[] = "Content-Type: text/xml; charset=\"utf-8\"\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<messaggi>\r\n";
+	if (FCGX_PutS(xml_header, preq->out()) == -1)
+		throw fcgi_error("PutS xml_header");
+
+	// 2) Messaggi (presi direttamente dal buffer)
+	if (FCGX_PutStr(inizio[preq->da()],
+					inizio[prossimo_indice] - inizio[preq->da()],
+					preq->out()) != (inizio[prossimo_indice] - inizio[preq->da()]))
 		throw fcgi_error("PutStr");
 
+	// 3) Footer
+	char xml_footer[] = "</messaggi>";
+	if (FCGX_PutS(xml_footer, preq->out()) == -1)
+		throw fcgi_error("PutS xml_footer");
 	return 0;
 }
 
+
+static void gestisci_invio(Richiesta *preq)
+{
+	HoldingMutex ml(&mutex_inserimento);
+
+	if (prossimo_indice >= MAX_INDICE)
+		preq->rispondi_con_400();
+
+	// TODO: autore e testo devono essere escapati (e null-terminati)
+	const char *autore = "Insider";
+	const char *testo = "Testo di prova";
+	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
+	int len_xml = snprintf(inizio[prossimo_indice],
+							  spazio_disponibile,
+							  "<messaggio autore=\"%s\" numero=\"%d\">%s</messaggio>\r\n",
+							  autore, prossimo_indice, testo);
+	if (len_xml < 0)
+		throw sys_error("snprintf");
+	if (((unsigned) len_xml) >= spazio_disponibile)
+		// Spazio nel buffer terminato
+		preq->rispondi_con_400();
+
+
+	inizio[prossimo_indice+1] = inizio[prossimo_indice] + len_xml;
+	prossimo_indice++;
+
+	if (pthread_cond_signal(&nuovi_messaggi) != 0)
+		throw sys_error("pthread_cond_signal");
+}
 
 
 int main()
@@ -67,7 +115,8 @@ int main()
 	if (FCGX_Init() != 0)
 		throw fcgi_error("Init");
 
-	// TODO: crea il thread per l'invio dei messaggi
+	prossimo_indice = 1;
+	inizio[prossimo_indice] = buffer;
 
 	for (;;) {
 		Richiesta *preq = new Richiesta();
@@ -76,7 +125,7 @@ int main()
 		pthread_t newt;
 		switch (preq->tipo()) {
 		case Richiesta::INVIO:
-			// TODO: forwarda la richiesta al thread di invio messaggi
+			gestisci_invio(preq);
 			delete preq;
 			break;
 		case Richiesta::RICEZIONE:
