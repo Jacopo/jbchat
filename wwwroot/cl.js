@@ -42,6 +42,7 @@ function arrivo_messaggi(xml)
 				mostra_stato("Errore ricezione numero messaggio", 0);
 				return;
 			}
+			numero = parseInt(numero);
 			if (numero > ultimo_messaggio_ricevuto)
 				ultimo_messaggio_ricevuto = numero;
 
