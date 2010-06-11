@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <cstring>
 #include <cstdio>
 #include <sys/types.h>
 #include <time.h>
@@ -67,9 +68,8 @@ static void *thread_ricezione(void *arg)
 		throw fcgi_error("PutS xml_header");
 
 	// 2) Messaggi (presi direttamente dal buffer)
-	if (FCGX_PutStr(inizio[preq->da()],
-					inizio[prossimo_indice] - inizio[preq->da()],
-					preq->out()) != (inizio[prossimo_indice] - inizio[preq->da()]))
+	int len_invio = (int) (inizio[prossimo_indice] - inizio[preq->da()]);
+	if (FCGX_PutStr(inizio[preq->da()], len_invio, preq->out()) != len_invio)
 		throw fcgi_error("PutStr");
 
 	// 3) Footer
@@ -117,6 +117,9 @@ int main()
 
 	prossimo_indice = 1;
 	inizio[prossimo_indice] = buffer;
+#ifndef NDEBUG
+	memset(buffer, 0xCC, sizeof(buffer));
+#endif
 
 	for (;;) {
 		Richiesta *preq = new Richiesta();
@@ -142,4 +145,3 @@ int main()
 	}
 	return 0;
 }
-

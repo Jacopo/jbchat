@@ -2,6 +2,9 @@
 #define _UTIL_H
 
 #include "pthread.h"
+#include <errno.h>
+#include <cstdio>
+#include <cstring>
 #include <stdexcept>
 
 struct fcgi_error : std::runtime_error {
@@ -9,7 +12,10 @@ struct fcgi_error : std::runtime_error {
 };
 
 struct sys_error : std::runtime_error {
-	explicit sys_error(const char *msg) : runtime_error(msg) { }
+	int code;
+	explicit sys_error(const char *msg) : runtime_error(msg), code(errno) {
+		std::perror(msg);
+	}
 };
 
 
