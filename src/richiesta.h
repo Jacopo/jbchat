@@ -25,10 +25,17 @@ public:
 	// Risposte predefinite
 	void rispondi_con_400() {
 		if (FCGX_FPrintF(out(),
-		    "Status: 400 Bad Request"
+			"Status: 400 Bad Request\r\n"
 		    "Content-Type: text/plain; charset=\"utf-8\"\r\n"
 		    "\r\n"
-		    "Il client ha inviato una richiesta incomprensibile.\r\n") == -1)
+			"400 Il client ha inviato una richiesta incomprensibile.\r\n") == -1)
+			throw fcgi_error("FPrintF");
+	}
+	void rispondi_OK() {
+		if (FCGX_FPrintF(out(),
+			"Content-Type: text/plain; charset=\"utf-8\"\r\n"
+			"\r\n"
+			"OK") == -1)
 			throw fcgi_error("FPrintF");
 	}
 

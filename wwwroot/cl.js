@@ -21,7 +21,7 @@ function richiedi_messaggi()
 	$.ajax({
 		type: 'GET',
 		url: url_fcgi,
-		data: { 'ricevi_da' : ultimo_messaggio_ricevuto },
+		data: { 'ricevi_da' : ultimo_messaggio_ricevuto+1 },
 		success: arrivo_messaggi,
 		error: errore_ricezione,
 		dataType: 'xml',

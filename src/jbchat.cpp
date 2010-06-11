@@ -42,7 +42,7 @@ static void *thread_ricezione(void *arg)
 	{
 		HoldingMutex ml(&mutex_inserimento);
 		while (preq->da() >= prossimo_indice)
-			if (pthread_cond_timedwait(&nuovi_messaggi, &mutex_inserimento, &waketime) != 0) {
+			if (pthread_cond_wait(&nuovi_messaggi, &mutex_inserimento) != 0) {
 				if (errno == ETIMEDOUT)
 					invia_keepalive = true;
 				else throw sys_error("phtread_cond_wait");
@@ -93,7 +93,7 @@ static void gestisci_invio(Richiesta *preq)
 	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
 	int len_xml = snprintf(inizio[prossimo_indice],
 							  spazio_disponibile,
-							  "<messaggio autore=\"%s\" numero=\"%d\">%s</messaggio>\r\n",
+							  "<msg autore=\"%s\" numero=\"%d\">%s</msg>\r\n",
 							  autore, prossimo_indice, testo);
 	if (len_xml < 0)
 		throw sys_error("snprintf");
@@ -104,6 +104,8 @@ static void gestisci_invio(Richiesta *preq)
 
 	inizio[prossimo_indice+1] = inizio[prossimo_indice] + len_xml;
 	prossimo_indice++;
+
+	preq->rispondi_OK();
 
 	if (pthread_cond_signal(&nuovi_messaggi) != 0)
 		throw sys_error("pthread_cond_signal");
