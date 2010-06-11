@@ -17,7 +17,7 @@ using namespace std;
 
 #define BUFSIZE 10000000
 #define MAX_INDICE 2000
-#define KEEPALIVE_TIMEOUT 120		// In secondi
+#define KEEPALIVE_TIMEOUT 30		// In secondi
 
 
 static int prossimo_indice;
@@ -35,17 +35,17 @@ static void *thread_ricezione(void *arg)
 	bool invia_keepalive = false;
 	timespec waketime;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &waketime) != 0)
+	if (clock_gettime(CLOCK_REALTIME, &waketime) != 0)
 		throw sys_error("clock_gettime");
 	waketime.tv_sec += KEEPALIVE_TIMEOUT;
 
 	{
 		HoldingMutex ml(&mutex_inserimento);
 		while (preq->da() >= prossimo_indice)
-			if (pthread_cond_wait(&nuovi_messaggi, &mutex_inserimento) != 0) {
-				if (errno == ETIMEDOUT)
-					invia_keepalive = true;
-				else throw sys_error("phtread_cond_wait");
+			if (pthread_cond_timedwait(&nuovi_messaggi, &mutex_inserimento, &waketime) != 0) {
+				// XXX: errno non viene impostato?!?
+				invia_keepalive = true;
+				break;
 			}
 	}
 
@@ -68,6 +68,7 @@ static void *thread_ricezione(void *arg)
 		throw fcgi_error("PutS xml_header");
 
 	// 2) Messaggi (presi direttamente dal buffer)
+	//    Nota: prossimo_indice potrebbe essere stato incrementato nel frattempo, ma non c'è problema
 	int len_invio = (int) (inizio[prossimo_indice] - inizio[preq->da()]);
 	if (FCGX_PutStr(inizio[preq->da()], len_invio, preq->out()) != len_invio)
 		throw fcgi_error("PutStr");
