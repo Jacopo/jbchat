@@ -7,6 +7,7 @@
 class Richiesta {
 public:
 	enum TIPO_RICHIESTA { RICEZIONE, INVIO, IGNOTA };
+	enum METODO {GET,POST,UNDEFINED};
 
 	explicit Richiesta() : already_parsed(false) {
 		if (FCGX_InitRequest(&fcgi_request, 0, 0) != 0)
@@ -47,6 +48,8 @@ private:
 
 	bool already_parsed;
 
+	void processGET();
+	void processPOST();
 	void parse_query();
 };
 
