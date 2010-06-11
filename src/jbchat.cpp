@@ -40,7 +40,7 @@ static void *thread_ricezione(void *arg)
 
 	{
 		HoldingMutex ml(&mutex_inserimento);
-		while (preq->da() > prossimo_indice)
+		while (preq->da() >= prossimo_indice)
 			if (pthread_cond_timedwait(&nuovi_messaggi, &mutex_inserimento, &waketime) != 0) {
 				if (errno == ETIMEDOUT)
 					invia_keepalive = true;
