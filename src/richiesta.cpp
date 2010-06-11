@@ -8,7 +8,6 @@ using namespace std;
 
 void Richiesta::parse_query()
 {
-    // TODO
     char* str;
     METODO metodo;
     str=FCGX_GetParam("REQUEST_METHOD", fcgi_request.envp);
@@ -30,36 +29,23 @@ void Richiesta::parse_query()
             m_tipo=IGNOTA;
     };
 
-	if (m_da == 0)		/* I messaggi sono numerati a partire da 1 */
-		m_da = 1;
-
     already_parsed = true;
 }
 
-void Richiesta::processGET(){
-        char* str;
-        char num[30];
+void Richiesta::processGET()
+{
+	m_tipo = IGNOTA;
 
-        str=FCGX_GetParam("QUERY_STRING", fcgi_request.envp);
-        if (strncmp(str,"ricevi_da=",9)==0){
-            m_tipo=RICEZIONE;
-            int i=0;
-            for (i=0;i<30;i++){
-                if(str[9+i]<'0' || str[9+i]>'9')
-                    break;
-                num[i]=str[9+i];
-            }
-            if (i==30 || i==1){
-                m_tipo=IGNOTA;  //ERRORE
-                return;
-            }
-                num[i+1]='\0';
-            m_da=atoi(num);
-            return;
-        }
-        m_tipo=IGNOTA;  //ERRORE
-        return;
-    }
+	char* str = FCGX_GetParam("QUERY_STRING", fcgi_request.envp);
+	if ((strlen(str) > 9) && (strncmp(str,"ricevi_da=",9)==0)) {
+		errno = 0;
+		unsigned long t = strtoul(str + 10, NULL, 10);
+		if ((t == 0) || (errno != 0))
+			return;
+		m_tipo = RICEZIONE;
+		m_da = (int) t;
+	}
+}
 
 void Richiesta::processPOST(){
     m_tipo=INVIO;
