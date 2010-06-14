@@ -89,13 +89,11 @@ static void gestisci_invio(Richiesta *preq)
 		preq->rispondi_con_400();
 
 	// TODO: autore e testo devono essere escapati (e null-terminati)
-	const char *autore = "Insider";
-	const char *testo = "Testo di prova";
 	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
 	int len_xml = snprintf(inizio[prossimo_indice],
 							  spazio_disponibile,
 							  "<msg autore=\"%s\" numero=\"%d\">%s</msg>\r\n",
-							  autore, prossimo_indice, testo);
+							  preq->autore().c_str(), prossimo_indice, preq->testo().c_str());
 	if (len_xml < 0)
 		throw sys_error("snprintf");
 	if (((unsigned) len_xml) >= spazio_disponibile)

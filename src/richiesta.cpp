@@ -1,5 +1,6 @@
 #include "richiesta.h"
 #include <fcgiapp.h>
+#include <cassert>
 #include <cstdlib>
 #include <string>
 #include <cstring>
@@ -47,7 +48,33 @@ void Richiesta::processGET()
 	}
 }
 
-void Richiesta::processPOST(){
-    m_tipo=INVIO;
+void Richiesta::processPOST()
+{
+	m_tipo = IGNOTA;
+
+	char str[2000];
+	size_t indiceAutore;        //posizione in cui si trova il nome dell'autore
+								//dovrebbe essere zero
+	size_t indiceTesto;         //posizione in cui si trova il testo
+
+	FCGX_GetStr(str, sizeof(str), fcgi_request.in);
+	string stringa(str);
+
+	indiceTesto=stringa.find("testo=");
+	indiceAutore=stringa.find("autore=");
+	if ((indiceTesto == string::npos) || (indiceTesto == string::npos) || ((indiceAutore != 0) && (indiceTesto != 0)))
+		return;
+
+	if (indiceAutore <= indiceTesto) {
+		assert(indiceAutore == 0);
+		m_autore = string(str+7, indiceTesto-(7+1));
+		m_testo = string(str+indiceTesto+6, strlen(str)-(indiceTesto+6));
+	} else {
+		assert(indiceTesto == 0);
+		m_testo = string(str+6, indiceAutore-(6+1));
+		m_autore = string(str+indiceAutore+7, strlen(str)-(indiceAutore+7));
+	}
+
+	m_tipo = INVIO;
 }
 

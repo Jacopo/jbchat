@@ -20,6 +20,9 @@ public:
 
 	TIPO_RICHIESTA tipo() { if (!already_parsed) parse_query(); return m_tipo; }
 	int da() { if (!already_parsed) parse_query(); return m_da; }
+	std::string testo() { if (!already_parsed) parse_query(); return m_testo; }
+	std::string autore() { if (!already_parsed) parse_query(); return m_autore; }
+
 
 
 	// Risposte predefinite
@@ -52,6 +55,8 @@ private:
 
 	TIPO_RICHIESTA m_tipo;
 	int m_da;
+	std::string m_testo;
+	std::string m_autore;
 
 	bool already_parsed;
 
