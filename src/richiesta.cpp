@@ -57,9 +57,14 @@ void Richiesta::processPOST()
 								//dovrebbe essere zero
 	size_t indiceTesto;         //posizione in cui si trova il testo
 
-	FCGX_GetStr(str, sizeof(str), fcgi_request.in);
-	string stringa(str);
+	int byte_letti = FCGX_GetStr(str, sizeof(str)-1, fcgi_request.in);
+	str[byte_letti] = '\0';
+	if (strlen(str) != ((size_t) byte_letti)) {
+		// Rifiutiamo stringhe contenenti byte nulli
+		return;
+	}
 
+	string stringa(str);
 	indiceTesto=stringa.find("testo=");
 	indiceAutore=stringa.find("autore=");
 	if ((indiceTesto == string::npos) || (indiceTesto == string::npos) || ((indiceAutore != 0) && (indiceTesto != 0)))
