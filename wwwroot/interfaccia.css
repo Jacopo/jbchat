@@ -1,0 +1,55 @@
+BODY, INPUT, SELECT, TEXTAREA, BUTTON {
+	font-family:    Century Gothic, Apple Gothic, sans-serif;
+}
+INPUT[type="text"] {
+	border:                 1px solid #999;
+	padding:                0.1em;
+}
+
+#msgs {
+	width:   30%;
+	height:  20em;
+	overflow: auto;
+}
+#msgs h3 {
+	margin:	0;
+	text-align: center;
+}
+.autore {
+	float: right;
+	font-weight: bold;
+}
+#msgs li:nth-child(odd) {
+	background: #eee;
+}
+#msgs li {
+	margin-bottom: 0.4em;
+}
+
+#wr {
+	position: fixed;
+	width: 20em;
+	top: 3em;
+	left: 35%;
+	padding: 1em;
+	background-color: #ddd;
+	border: 2px solid #444;
+}
+#wr h3 {
+	margin: 0;
+}
+
+/* Footer */
+#ft {
+	color:		#777;
+	font-size:	90%;
+	text-align:	center;
+}
+#ft A {
+	color:		#666;
+	text-decoration: none;
+	border-bottom:	1px dotted;
+}
+div#ft {
+	margin-top:	6em;
+}

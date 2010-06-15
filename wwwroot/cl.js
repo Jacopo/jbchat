@@ -48,9 +48,9 @@ function arrivo_messaggi(xml)
 
 			// Nota: text(stringa) si occupa anche
 			//       dell'escaping
-			$('<li></li>').text(numero).appendTo("#msgs");
-			$('<li></li>').text(autore).appendTo("#msgs");
-			$('<li></li>').text(testo).appendTo("#msgs");
+			var nuovo_nodo = $('<li></li>').text(testo);
+			$('<div class="autore"></div>').text(autore).appendTo(nuovo_nodo);
+			nuovo_nodo.appendTo("#msgs");
 		});
 	}
 	richiedi_messaggi();

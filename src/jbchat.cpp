@@ -88,6 +88,12 @@ static void gestisci_invio(Richiesta *preq)
 	if (prossimo_indice >= MAX_INDICE)
 		preq->rispondi_con_400();
 
+	// Ignora messaggi vuoti
+	if (preq->testo().size() == 0) {
+		preq->rispondi_OK();
+		return;
+	}
+
 	// TODO: autore e testo devono essere escapati (e null-terminati)
 	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
 	int len_xml = snprintf(inizio[prossimo_indice],

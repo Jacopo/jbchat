@@ -6,22 +6,32 @@
 
 	<script src="jquery-1.4.2.min.js"></script>
 	<script src="cl.js"></script>
+	<link rel="stylesheet" type="text/css" href="interfaccia.css" />
 </head>
 <body>
 	<h1>Ajax chat</h1>
 	
+	<div id="stato"></div>
+
 	<h2>Messaggi</h2>
 	<div id="msgs"></div>
 
-	<div id="stato"></div>
+	<div id="wr">
+		<h3>Scrivi un messaggio</h3>
+		<form id="form_invio" name="form_invio">
+			<p>
+			<input id="testo" name="testo" type="text" style="width: 90%" /><br />
+			<input id="bottone_invio" type="submit" value="Invia" />
+			</p><p>
+			<label for="autore">Nome utente: </label>
+			<input id="autore" name="autore" value="Anonimo" type="text" size="10" />
+			</p>
+		</form>
+	</div>
 
-	<h3>Scrivi un messaggio</h3>
-	<form id="form_invio" name="form_invio">
-		<input id="testo" name="testo" type="text" />
-		<input id="bottone_invio" type="submit" value="Invia" />
-		<br />
-		<label for="autore">Nome utente: </label>
-		<input id="autore" name="autore" value="Anonimo" type="text" />
-	</form>
+	<div id="ft">
+		<p>Copyright &copy; 2010 Jacopo Corbetta and Bruno Giglio</p>
+	</div>
+</div>
 </body>
 </html>
