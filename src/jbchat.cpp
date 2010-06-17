@@ -109,7 +109,7 @@ static bool parse_invio(Richiesta *preq, string *ptesto, string *pautore)
 
 static void gestisci_invio(Richiesta *preq)
 {
-	// Parsa testo e autore
+	// 1) Parsa testo e autore a partire dal contenuto del POST
 	string testo, autore;
 	if (parse_invio(preq, &testo, &autore) == false) {
 		preq->rispondi_con_400();
@@ -120,15 +120,23 @@ static void gestisci_invio(Richiesta *preq)
 		preq->rispondi_OK();
 		return;
 	}
-
 	if (prossimo_indice >= MAX_INDICE)
 		preq->rispondi_con_400();
 
-	// TODO: autore e testo devono essere escapati (e null-terminati)
+	// 2) Verifica sicurezza input
+	// Il testo sarà in una sezione CDATA: è sufficiente assicurarsi che non compaia il terminatore
+	if (testo.find("]]>") != string::npos)
+		preq->rispondi_con_400();
+	// L'autore invece è in un attributo
+	// TODO: verifica lista proibiti (es: UTF-8 crea problemi?)
+	if ((autore.find('<') != string::npos) || (autore.find('>') != string::npos) || (autore.find('\\') != string::npos) ||
+		(autore.find('"') != string::npos) || (autore.find('\'') != string::npos) || (autore.find('&') != string::npos))
+		preq->rispondi_con_400();
+
 	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
 	int len_xml = snprintf(inizio[prossimo_indice],
 							  spazio_disponibile,
-							  "<msg autore=\"%s\" numero=\"%d\">%s</msg>\r\n",
+							  "<msg autore=\"%s\" numero=\"%d\"><![CDATA[%s]]></msg>\r\n",
 							  autore.c_str(), prossimo_indice, testo.c_str());
 	if (len_xml < 0)
 		throw sys_error("snprintf");
