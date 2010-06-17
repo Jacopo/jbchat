@@ -33,8 +33,12 @@ function arrivo_messaggi(xml)
 {
 	if (xml != '<keepalive></keepalive>') {
 		$(xml).find('msg').each(function() {
-			var testo = $(this).text();
-			var autore = $(this).attr('autore');
+			// TODO: come invertire il form-encoding?
+			//       Vanno anche cambiati + in spazi, etc
+			//       Il browser rifiuta di aggiungere il testo come UTF-8
+			// Forse vale la pena di passare a un altro encoding per il post
+			var testo = unescape($(this).text());
+			var autore = unescape($(this).attr('autore'));
 
 			var numero = $(this).attr('numero');
 			var RE_num = /^\d+$/;
