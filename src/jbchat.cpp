@@ -83,11 +83,8 @@ static void *thread_ricezione(void *arg)
 	return 0;
 }
 
-static void gestisci_invio(Richiesta *preq)
+static bool parse_invio(Richiesta *preq, string *ptesto, string *pautore)
 {
-	HoldingMutex ml(&mutex_inserimento);
-
-
 	string stringa = preq->contenuto_post(), testo, autore;
 	size_t indiceAutore;        //posizione in cui si trova il nome dell'autore
 								//dovrebbe essere zero
@@ -96,27 +93,36 @@ static void gestisci_invio(Richiesta *preq)
 	indiceTesto=stringa.find("testo=");
 	indiceAutore=stringa.find("autore=");
 	if ((indiceTesto == string::npos) || (indiceTesto == string::npos) || ((indiceAutore != 0) && (indiceTesto != 0)))
-		return;
+		return false;
 
 	if (indiceAutore <= indiceTesto) {
 		assert(indiceAutore == 0);
-		autore = string(stringa, 7, indiceTesto-(7+1));
-		testo = string(stringa, indiceTesto+6, stringa.size()-(indiceTesto+6));
+		*pautore = string(stringa, 7, indiceTesto-(7+1));
+		*ptesto = string(stringa, indiceTesto+6, stringa.size()-(indiceTesto+6));
 	} else {
 		assert(indiceTesto == 0);
-		testo = string(stringa, 6, indiceAutore-(6+1));
-		autore = string(stringa, indiceAutore+7, stringa.size()-(indiceAutore+7));
+		*ptesto = string(stringa, 6, indiceAutore-(6+1));
+		*pautore = string(stringa, indiceAutore+7, stringa.size()-(indiceAutore+7));
 	}
+	return true;
+}
 
-
-	if (prossimo_indice >= MAX_INDICE)
+static void gestisci_invio(Richiesta *preq)
+{
+	// Parsa testo e autore
+	string testo, autore;
+	if (parse_invio(preq, &testo, &autore) == false) {
 		preq->rispondi_con_400();
-
+		return;
+	}
 	// Ignora messaggi vuoti
 	if (testo.size() == 0) {
 		preq->rispondi_OK();
 		return;
 	}
+
+	if (prossimo_indice >= MAX_INDICE)
+		preq->rispondi_con_400();
 
 	// TODO: autore e testo devono essere escapati (e null-terminati)
 	size_t spazio_disponibile = BUFSIZE - (buffer - inizio[prossimo_indice]);
@@ -132,7 +138,10 @@ static void gestisci_invio(Richiesta *preq)
 
 
 	inizio[prossimo_indice+1] = inizio[prossimo_indice] + len_xml;
-	prossimo_indice++;
+	{
+		HoldingMutex ml(&mutex_inserimento);
+		prossimo_indice++;
+	}
 
 	preq->rispondi_OK();
 
