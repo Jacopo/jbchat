@@ -53,10 +53,6 @@ void Richiesta::processPOST()
 	m_tipo = IGNOTA;
 
 	char str[2000];
-	size_t indiceAutore;        //posizione in cui si trova il nome dell'autore
-								//dovrebbe essere zero
-	size_t indiceTesto;         //posizione in cui si trova il testo
-
 	int byte_letti = FCGX_GetStr(str, sizeof(str)-1, fcgi_request.in);
 	str[byte_letti] = '\0';
 	if (strlen(str) != ((size_t) byte_letti)) {
@@ -64,22 +60,9 @@ void Richiesta::processPOST()
 		return;
 	}
 
-	string stringa(str);
-	indiceTesto=stringa.find("testo=");
-	indiceAutore=stringa.find("autore=");
-	if ((indiceTesto == string::npos) || (indiceTesto == string::npos) || ((indiceAutore != 0) && (indiceTesto != 0)))
-		return;
-
-	if (indiceAutore <= indiceTesto) {
-		assert(indiceAutore == 0);
-		m_autore = string(str+7, indiceTesto-(7+1));
-		m_testo = string(str+indiceTesto+6, strlen(str)-(indiceTesto+6));
-	} else {
-		assert(indiceTesto == 0);
-		m_testo = string(str+6, indiceAutore-(6+1));
-		m_autore = string(str+indiceAutore+7, strlen(str)-(indiceAutore+7));
-	}
-
+	// Per non sprecare risorse del main thread, il parsing vero e proprio
+	// verrà fatto in seguito
+	m_contenuto_post = str;
 	m_tipo = INVIO;
 }
 

@@ -2,6 +2,7 @@
 #define _UTIL_H
 
 #include "pthread.h"
+#include "semaphore.h"
 #include <errno.h>
 #include <cstdio>
 #include <cstring>
@@ -38,6 +39,21 @@ private:
 	// Copy is forbidden
 	HoldingMutex(const HoldingMutex&);
 	HoldingMutex& operator=(const HoldingMutex&);
+};
+
+
+///
+/// \brief Wrapper for semaphores
+///
+class Semaphore
+{
+public:
+	void P() { if (sem_wait(&s) != 0) throw sys_error("Semaphore P"); }
+	void V() { if (sem_post(&s) != 0) throw sys_error("Semaphore V"); }
+	Semaphore(unsigned int initval = 0) { if (sem_init(&s, 0, initval) != 0) throw sys_error("Semaphore init"); }
+	~Semaphore() { if (sem_destroy(&s) != 0) throw sys_error("Semaphore destroy"); }
+private:
+	sem_t s;
 };
 
 #endif

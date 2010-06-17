@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <cassert>
 #include <cstring>
 #include <cstdio>
 #include <sys/types.h>
@@ -12,6 +13,7 @@
 
 #include "util.h"
 #include "richiesta.h"
+#include "CodaMessaggi.h"
 using namespace std;
 
 
@@ -27,6 +29,7 @@ static char* inizio[MAX_INDICE+10];
 static pthread_mutex_t mutex_inserimento = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t nuovi_messaggi = PTHREAD_COND_INITIALIZER;
 
+static CodaMessaggi<Richiesta*> messaggi_in_attesa;
 
 static void *thread_ricezione(void *arg)
 {
@@ -80,16 +83,37 @@ static void *thread_ricezione(void *arg)
 	return 0;
 }
 
-
 static void gestisci_invio(Richiesta *preq)
 {
 	HoldingMutex ml(&mutex_inserimento);
+
+
+	string stringa = preq->contenuto_post(), testo, autore;
+	size_t indiceAutore;        //posizione in cui si trova il nome dell'autore
+								//dovrebbe essere zero
+	size_t indiceTesto;         //posizione in cui si trova il testo
+
+	indiceTesto=stringa.find("testo=");
+	indiceAutore=stringa.find("autore=");
+	if ((indiceTesto == string::npos) || (indiceTesto == string::npos) || ((indiceAutore != 0) && (indiceTesto != 0)))
+		return;
+
+	if (indiceAutore <= indiceTesto) {
+		assert(indiceAutore == 0);
+		autore = string(stringa, 7, indiceTesto-(7+1));
+		testo = string(stringa, indiceTesto+6, stringa.size()-(indiceTesto+6));
+	} else {
+		assert(indiceTesto == 0);
+		testo = string(stringa, 6, indiceAutore-(6+1));
+		autore = string(stringa, indiceAutore+7, stringa.size()-(indiceAutore+7));
+	}
+
 
 	if (prossimo_indice >= MAX_INDICE)
 		preq->rispondi_con_400();
 
 	// Ignora messaggi vuoti
-	if (preq->testo().size() == 0) {
+	if (testo.size() == 0) {
 		preq->rispondi_OK();
 		return;
 	}
@@ -99,7 +123,7 @@ static void gestisci_invio(Richiesta *preq)
 	int len_xml = snprintf(inizio[prossimo_indice],
 							  spazio_disponibile,
 							  "<msg autore=\"%s\" numero=\"%d\">%s</msg>\r\n",
-							  preq->autore().c_str(), prossimo_indice, preq->testo().c_str());
+							  autore.c_str(), prossimo_indice, testo.c_str());
 	if (len_xml < 0)
 		throw sys_error("snprintf");
 	if (((unsigned) len_xml) >= spazio_disponibile)
@@ -116,6 +140,17 @@ static void gestisci_invio(Richiesta *preq)
 		throw sys_error("pthread_cond_signal");
 }
 
+static void *thread_gestione_invii(void *)
+{
+	Richiesta *preq;
+	for (;;) {
+		preq = messaggi_in_attesa.ricevi();
+		gestisci_invio(preq);
+		delete preq;
+	}
+	return 0;
+}
+
 
 int main()
 {
@@ -128,6 +163,12 @@ int main()
 	memset(buffer, 0xCC, sizeof(buffer));
 #endif
 
+	pthread_t gestore_invii;
+	if (pthread_create(&gestore_invii, NULL, thread_gestione_invii, NULL) != 0)
+		throw sys_error("pthread_create gestore invii");
+	if (pthread_detach(gestore_invii) != 0)
+		throw sys_error("pthread_detach gestore invii");
+
 	for (;;) {
 		Richiesta *preq = new Richiesta();
 		preq->accetta_nuova();
@@ -135,8 +176,7 @@ int main()
 		pthread_t newt;
 		switch (preq->tipo()) {
 		case Richiesta::INVIO:
-			gestisci_invio(preq);
-			delete preq;
+			messaggi_in_attesa.accoda(preq);
 			break;
 		case Richiesta::RICEZIONE:
 			if (pthread_create(&newt, NULL, thread_ricezione, preq) != 0)
