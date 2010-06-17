@@ -145,8 +145,8 @@ static void gestisci_invio(Richiesta *preq)
 
 	preq->rispondi_OK();
 
-	if (pthread_cond_signal(&nuovi_messaggi) != 0)
-		throw sys_error("pthread_cond_signal");
+	if (pthread_cond_broadcast(&nuovi_messaggi) != 0)
+		throw sys_error("pthread_cond_broadcast");
 }
 
 static void *thread_gestione_invii(void *)
