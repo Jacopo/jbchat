@@ -48,6 +48,15 @@ private:
 class Semaphore
 {
 public:
+	bool try_P() {
+		errno = 0;
+		if (sem_trywait(&s) != 0) {
+			if (errno == EAGAIN)
+				return false;
+			else throw sys_error("Semaphore P");
+		}
+		return true;
+	}
 	void P() { if (sem_wait(&s) != 0) throw sys_error("Semaphore P"); }
 	void V() { if (sem_post(&s) != 0) throw sys_error("Semaphore V"); }
 	Semaphore(unsigned int initval = 0) { if (sem_init(&s, 0, initval) != 0) throw sys_error("Semaphore init"); }

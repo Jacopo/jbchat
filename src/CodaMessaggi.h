@@ -7,12 +7,14 @@
 // Coda circolare, singolo produttore, singolo consumatore
 template <class T, unsigned int ARR_SIZE = 200> class CodaMessaggi {
 public:
-	void accoda(T n) {
-		spazio.P();
+	bool accoda(T n) {
+		if (spazio.try_P() == false)
+			return false;
 		arr[w++] = n;
 		if (w == ARR_SIZE)
 			w = 0;
 		piena.V();
+		return true;
 	}
 
 	T ricevi() {

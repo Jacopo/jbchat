@@ -193,7 +193,10 @@ int main()
 		pthread_t newt;
 		switch (preq->tipo()) {
 		case Richiesta::INVIO:
-			messaggi_in_attesa.accoda(preq);
+			if (messaggi_in_attesa.accoda(preq) == false) {
+				preq->rispondi_con_400();
+				delete preq;
+			}
 			break;
 		case Richiesta::RICEZIONE:
 			if (pthread_create(&newt, NULL, thread_ricezione, preq) != 0)
