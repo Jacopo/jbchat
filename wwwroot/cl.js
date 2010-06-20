@@ -53,6 +53,7 @@ function arrivo_messaggi(xml)
 			nuovo_nodo.appendTo("#msgs");
 		});
 	}
+	$("#msgs").scrollTop(1000000);
 	richiedi_messaggi();
 }
 
