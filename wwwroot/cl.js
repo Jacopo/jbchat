@@ -33,12 +33,8 @@ function arrivo_messaggi(xml)
 {
 	if (xml != '<keepalive></keepalive>') {
 		$(xml).find('msg').each(function() {
-			// TODO: come invertire il form-encoding?
-			//       Vanno anche cambiati + in spazi, etc
-			//       Il browser rifiuta di aggiungere il testo come UTF-8
-			// Forse vale la pena di passare a un altro encoding per il post
-			var testo = unescape($(this).text());
-			var autore = unescape($(this).attr('autore'));
+			var testo = decodeURIComponent($(this).text());
+			var autore = decodeURIComponent($(this).attr('autore'));
 
 			var numero = $(this).attr('numero');
 			var RE_num = /^\d+$/;
@@ -72,11 +68,15 @@ function invia_messaggio()
 	if (!invio_abilitato)
 		return false;
 
+	var testo_encoded = encodeURIComponent($("#testo").val());
+	var autore_encoded = encodeURIComponent($("#autore").val());
+	var dati = "testo=" + testo_encoded + "&autore=" + autore_encoded;
+
 	disabilita_invio();
 	$.ajax({
 		type: 'POST',
 		url: url_fcgi,
-		data: $('#form_invio').serialize(),
+		data: dati,
 		success: function(risp) {
 			if (risp == 'OK')
 				abilita_invio();
