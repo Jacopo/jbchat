@@ -5,12 +5,13 @@ server {
 
 	access_log  /var/log/nginx/jbchat.access.log;
 
+	# Posizione dei file statici da servire ai client
 	location / {
 		root   /var/www/jbchat;
 		index  index.html;
 	}
 
-	# Passa tutti gli URL qualcosa.fcgi a spawn-fcgi
+	# Passa tutti gli URL nome_programma.fcgi a spawn-fcgi
 	location ~ \.fcgi$ {
 		fastcgi_pass   127.0.0.1:9000;
 		fastcgi_index  index.fcgi;
