@@ -1,17 +1,17 @@
 var url_fcgi = 'jbchat.fcgi';
 
-var invio_abilitato = true;
 var ultimo_messaggio_ricevuto = 0;
+var messaggi_in_coda = new Array();
+var ritardo_per_tentativi = 1;
 
 $(document).ready(function() {
-	// Reset iniziale
-	abilita_invio();
-
 	// Predispone il gestore dell'invio dei messaggi
-	$('#form_invio').submit(invia_messaggio);
+	$('#form_invio').submit(accoda_messaggio);
 
 	// Inizia l'ascolto dei messaggi
-	richiedi_messaggi();
+	// (usiamo un timer per indicare al browser che il caricamento
+	//  della pagina è stato completato)
+	setTimeout(richiedi_messaggi, 1000);
 });
 
 
@@ -45,6 +45,7 @@ function arrivo_messaggi(xml)
 			numero = parseInt(numero);
 			if (numero > ultimo_messaggio_ricevuto)
 				ultimo_messaggio_ricevuto = numero;
+			else mostra_stato("Messaggi ricevuti fuori ordine (" + ultimo_messaggio_ricevuto + "prima di " + numero + "), si consiglia di ricaricare la pagina", 0);
 
 			// Nota: text(stringa) si occupa anche
 			//       dell'escaping
@@ -52,77 +53,74 @@ function arrivo_messaggi(xml)
 			$('<div class="autore"></div>').text(autore).appendTo(nuovo_nodo);
 			nuovo_nodo.appendTo("#msgs");
 		});
+		$('#msgs').animate({scrollTop: $('#msgs')[0].scrollHeight});
 	}
-	$("#msgs").scrollTop(1000000);
 	richiedi_messaggi();
 }
 
 function errore_ricezione(XMLHttpRequest, textStatus, errorThrown)
 {
-	mostra_stato("Si è verificato un errore di ricezione (" + textStatus + "), ricaricare la pagina", 1);
+	mostra_stato("Si è verificato un errore di ricezione (" + textStatus + "), ricaricare la pagina", 0);
 }
 
 
 // Invio messaggi ////////////////////////////////////////
-function invia_messaggio()
+function accoda_messaggio()
 {
-	if (!invio_abilitato)
-		return false;
-
 	var testo_encoded = encodeURIComponent($("#testo").val());
 	var autore_encoded = encodeURIComponent($("#autore").val());
-	var dati = "testo=" + testo_encoded + "&autore=" + autore_encoded;
+	$("#testo").val("");
 
-	disabilita_invio();
+	var dati = "testo=" + testo_encoded + "&autore=" + autore_encoded;
+	messaggi_in_coda.push(dati);
+	invia_messaggio_testa();
+
+	return false;
+}
+
+function invia_messaggio_testa()
+{
+	if (messaggi_in_coda.length == 0)
+		return;
+
 	$.ajax({
 		type: 'POST',
 		url: url_fcgi,
-		data: dati,
+		data: messaggi_in_coda[0],
 		success: function(risp) {
-			if (risp == 'OK')
-				abilita_invio();
-			else errore_invio();
+				if (risp == 'OK') {
+					ritardo_per_tentativi = 1;
+					messaggi_in_coda.shift();
+					invia_messaggio_testa();
+				} else errore_invio();
 			},
 		error: errore_invio,
 		dataType: 'text',
 		timeout: 1000
 	});
-	return false;
-}
-
-function disabilita_invio()
-{
-	invio_abilitato = false;
-	$('#bottone_invio')
-		.attr('disabled', true)
-		.val('Invio in corso...');
-}
-
-function abilita_invio()
-{
-	$('#testo').val("");
-	invio_abilitato = true;
-	$('#bottone_invio')
-		.attr('disabled', false)
-		.val('Invia');
 }
 
 function errore_invio(XMLHttpRequest, textStatus, errorThrown)
 {
-	mostra_stato("Si è verificato un errore durante l'invio del messaggio: " + textStatus, 2);
-	abilita_invio();
+	// Riprovo l'invio del messaggio, aumentando il ritardo ad ogni tentativo
+
+	if (ritardo_per_tentativi >= 200) {
+		mostra_stato("Impossibile inviare i messaggi (erano in coda: " + messaggi_in_coda.length + ", non saranno fatti altri tentativi): " + textStatus, 0);
+		return;
+	}
+
+	mostra_stato("Si è verificato un errore durante l'invio del messaggio (in coda: " + messaggi_in_coda.length + ", riprovo tra " + ritardo_per_tentativi + " secondi): " + textStatus, ritardo_per_tentativi);
+	setTimeout(invia_messaggio_testa, ritardo_per_tentativi * 1000);
+	ritardo_per_tentativi *= 2;
 }
 
 
 // Funzioni di interfaccia ///////////////////////////////
-function mostra_stato(s, tipo)
+function mostra_stato(s, tempo)
 {
-	// tipo:
-	//        0   normale
-	//        1   errore permanente
-	//        2   errore temporaneo
-
-	// TODO: stili, fadeout
 	$("#stato").text(s);
+	if (tempo != 0)
+		$("#stato").fadeIn(100).delay(tempo*1000-700).fadeOut(600);
+	else $("#stato").fadeIn(100);
 }
 
