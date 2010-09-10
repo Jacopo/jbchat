@@ -6,6 +6,9 @@ var ritardo_per_tentativi_ricezione = 1;
 var ritardo_per_tentativi_invio = 1;
 
 $(document).ready(function() {
+	// Reset iniziale
+	$("#stato").hide();
+
 	// Predispone il gestore dell'invio dei messaggi
 	$('#form_invio').submit(accoda_messaggio);
 

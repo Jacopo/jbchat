@@ -29,7 +29,7 @@ INPUT[type="text"] {
 #wr {
 	position: fixed;
 	width: 20em;
-	top: 3em;
+	top: 8em;
 	left: 35%;
 	padding: 1em;
 	background-color: #ddd;
@@ -37,6 +37,12 @@ INPUT[type="text"] {
 }
 #wr h3 {
 	margin: 0;
+}
+
+#stato {
+	padding: 0.5em;
+	background-color: #fef1ec;
+	border: 2px solid #cd0a0a;
 }
 
 /* Footer */
