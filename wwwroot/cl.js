@@ -2,7 +2,8 @@ var url_fcgi = 'jbchat.fcgi';
 
 var ultimo_messaggio_ricevuto = 0;
 var messaggi_in_coda = new Array();
-var ritardo_per_tentativi = 1;
+var ritardo_per_tentativi_ricezione = 1;
+var ritardo_per_tentativi_invio = 1;
 
 $(document).ready(function() {
 	// Predispone il gestore dell'invio dei messaggi
@@ -31,6 +32,7 @@ function richiedi_messaggi()
 
 function arrivo_messaggi(xml)
 {
+	ritardo_per_tentativi_ricezione = 1;
 	if (xml != '<keepalive></keepalive>') {
 		$(xml).find('msg').each(function() {
 			var testo = decodeURIComponent($(this).text());
@@ -60,7 +62,16 @@ function arrivo_messaggi(xml)
 
 function errore_ricezione(XMLHttpRequest, textStatus, errorThrown)
 {
-	mostra_stato("Si è verificato un errore di ricezione (" + textStatus + "), ricaricare la pagina", 0);
+	// Riprovo la ricezione dei messaggi, aumentando il ritardo ad ogni tentativo
+
+	if (ritardo_per_tentativi_ricezione >= 200) {
+		mostra_stato("Impossibile ricevere messaggi (erano in coda per l'invio: " + messaggi_in_coda.length + "): " + textStatus + ". Ricaricare la pagina", 0);
+		return;
+	}
+
+	mostra_stato("Si è verificato un errore di ricezione (riprovo tra " + ritardo_per_tentativi_ricezione + " secondi): " + textStatus, ritardo_per_tentativi_ricezione);
+	setTimeout(richiedi_messaggi, ritardo_per_tentativi_ricezione * 1000);
+	ritardo_per_tentativi_ricezione *= 2;
 }
 
 
@@ -89,7 +100,7 @@ function invia_messaggio_testa()
 		data: messaggi_in_coda[0],
 		success: function(risp) {
 				if (risp == 'OK') {
-					ritardo_per_tentativi = 1;
+					ritardo_per_tentativi_invio = 1;
 					messaggi_in_coda.shift();
 					invia_messaggio_testa();
 				} else errore_invio();
@@ -104,14 +115,14 @@ function errore_invio(XMLHttpRequest, textStatus, errorThrown)
 {
 	// Riprovo l'invio del messaggio, aumentando il ritardo ad ogni tentativo
 
-	if (ritardo_per_tentativi >= 200) {
+	if (ritardo_per_tentativi_invio >= 200) {
 		mostra_stato("Impossibile inviare i messaggi (erano in coda: " + messaggi_in_coda.length + ", non saranno fatti altri tentativi): " + textStatus, 0);
 		return;
 	}
 
-	mostra_stato("Si è verificato un errore durante l'invio del messaggio (in coda: " + messaggi_in_coda.length + ", riprovo tra " + ritardo_per_tentativi + " secondi): " + textStatus, ritardo_per_tentativi);
-	setTimeout(invia_messaggio_testa, ritardo_per_tentativi * 1000);
-	ritardo_per_tentativi *= 2;
+	mostra_stato("Si è verificato un errore durante l'invio del messaggio (in coda: " + messaggi_in_coda.length + ", riprovo tra " + ritardo_per_tentativi_invio + " secondi): " + textStatus, ritardo_per_tentativi_invio);
+	setTimeout(invia_messaggio_testa, ritardo_per_tentativi_invio * 1000);
+	ritardo_per_tentativi_invio *= 2;
 }
 
 
